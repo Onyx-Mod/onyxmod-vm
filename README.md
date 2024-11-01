@@ -1,4 +1,4 @@
-## PenguinMod/PenguinMod-Vm
+## Onyx-Mod/onycmod-vm
 
 Modified Scratch VM with a JIT compiler and more features.
 
