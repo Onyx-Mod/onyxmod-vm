@@ -955,9 +955,7 @@ class JSGenerator {
             let source = '(';
             // Do not generate any code for empty procedures.
             const procedureData = this.ir.procedures[procedureVariant];
-            if (procedureData.stack === null) {
-                break;
-            }
+            if (procedureData.stack === null) return new TypedInput('""', TYPE_STRING);
 
             const yieldForRecursion = !this.isWarp && procedureCode === this.script.procedureCode;
             const yieldForHat = this.isInHat;
