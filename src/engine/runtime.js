@@ -6,6 +6,7 @@ const ArgumentType = require('../extension-support/argument-type');
 const Blocks = require('./blocks');
 const BlocksRuntimeCache = require('./blocks-runtime-cache');
 const BlockType = require('../extension-support/block-type');
+const BlockShape = require('../extension-support/block-shape');
 const Profiler = require('./profiler');
 const Sequencer = require('./sequencer');
 const execute = require('./execute.js');
@@ -158,6 +159,14 @@ const ArgumentTypeMap = (() => {
     map[ArgumentType.SEPERATOR] = {
         fieldType: 'field_vertical_separator'
     };
+
+    map[ArgumentType.LEAF] = {
+        shape: BlockShape.LEAF
+    };
+    map[ArgumentType.PLUS] = {
+        shape: BlockShape.PLUS
+    };
+
     return map;
 })();
 
@@ -1888,6 +1897,11 @@ class Runtime extends EventEmitter {
                 // shaped like a hexagon
                 argJSON.check = argTypeInfo.check;
             }
+            if (argTypeInfo.shape) {
+                argJSON.shape = argTypeInfo.shape;
+            }
+
+            console.debug(argJSON, argTypeInfo)
 
             let valueName;
             let shadowType;
@@ -3672,7 +3686,7 @@ class Runtime extends EventEmitter {
      * @returns {Object} the screen state object
      */
     getCamera(screen) {
-        if (!this.cameraStates[screen]) {
+        if (typeof this.cameraStates[screen] !== 'object') {
             this.cameraStates[screen] = {
                 pos: [0, 0],
                 dir: 0,
@@ -3690,8 +3704,15 @@ class Runtime extends EventEmitter {
      */
     updateCamera(screen, state, silent) {
         if (state.dir) state.dir = MathUtil.wrapClamp(state.dir, -179, 180);
+        if (typeof this.cameraStates[screen] !== 'object') {
+            this.cameraStates[screen] = {
+                pos: [0, 0],
+                dir: 0,
+                scale: 1
+            };
+        }
         this.cameraStates[screen] = state = 
-            Object.assign(this.cameraStates[screen] ?? {}, state);
+            Object.assign(this.cameraStates[screen], state);
         if (!silent ?? state.silent) this.emitCameraChanged(screen);
     }
     emitCameraChanged(screen) {
