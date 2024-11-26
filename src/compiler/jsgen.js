@@ -746,6 +746,9 @@ class JSGenerator {
         case 'op.divide':
             // Needs to be marked as NaN because 0 / 0 === NaN
             return new TypedInput(`(${this.descendInput(node.left).asNumber()} / ${this.descendInput(node.right).asNumber()})`, TYPE_NUMBER_NAN);
+        case 'op.power':
+            // Needs to be marked as NaN because -1 ** 0.5 === NaN
+            return new TypedInput(`(Math.pow(${this.descendInput(node.left).asNumber()}, ${this.descendInput(node.right).asNumber()}))`, TYPE_NUMBER_NAN);
         case 'op.equals': {
             const left = this.descendInput(node.left);
             const right = this.descendInput(node.right);
@@ -1236,14 +1239,14 @@ class JSGenerator {
         }
         case 'control.repeatForSeconds': {
             const duration = this.localVariables.next();
-            this.source += `thread.timer = timer();\n`;
+            this.source += `thread.timer2 = timer();\n`;
             this.source += `var ${duration} = Math.max(0, 1000 * ${this.descendInput(node.times).asNumber()});\n`;
             this.requestRedraw();
-            this.source += `while (thread.timer.timeElapsed() < ${duration}) {\n`;
+            this.source += `while (thread.timer2.timeElapsed() < ${duration}) {\n`;
             this.descendStack(node.do, new Frame(true, 'control.repeatForSeconds'));
             this.yieldLoop();
             this.source += `}\n`;
-            this.source += 'thread.timer = null;\n';
+            this.source += 'thread.timer2 = null;\n';
             break;
         }
         case 'control.stopAll':
@@ -1320,7 +1323,7 @@ class JSGenerator {
             // pm: unknown behavior may appear so lets use try catch
             this.source += `try {\n`;
             // set target
-            const targetSprite = isStage ? stage : `runtime.getSpriteTargetByName(${sprite})`;
+            const targetSprite = isStage ? stage : `runtime.getSpriteTargetByName(${sprite}) || runtime.getTargetById(${sprite})`;
             this.source += `const target = (${targetSprite});\n`;
             // only run if target is found
             this.source += `if (target) {\n`;

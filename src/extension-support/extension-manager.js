@@ -147,6 +147,14 @@ const defaultBuiltinExtensions = {
     blockly2math: () => require("../extensions/blockly-2/math.js"),
     // jwXml: hi im back haha have funny xml
     jwXml: () => require("../extensions/jw_xml"),
+    // vector type blah blah blah
+    jwVector: () => require("../extensions/jwVector"),
+    // my own array system yipee
+    jwArray: () => require("../extensions/jwArray"),
+    // mid extension but i need it
+    jwTargets: () => require("../extensions/jwTargets"),
+    // cool new physics extension
+    jwPsychic: () => require("../extensions/jwPsychic"),
 
     // jw: They'll think its made by jwklong >:)
     // (but it's not (yet (maybe (probably not (but its made by ianyourgod)))))
