@@ -128,6 +128,14 @@ class Extension {
                     },
                     ...Target.Block
                 },
+                {
+                    opcode: 'cloneOrigin',
+                    text: 'origin of [TARGET]',
+                    arguments: {
+                        TARGET: Target.Argument
+                    },
+                    ...Target.Block
+                },
                 '---',
                 {
                     opcode: 'get',
@@ -141,10 +149,53 @@ class Extension {
                         }
                     }
                 },
+                {
+                    opcode: 'isClone',
+                    text: 'is [TARGET] a clone',
+                    blockType: BlockType.BOOLEAN,
+                    arguments: {
+                        TARGET: Target.Argument
+                    }
+                },
+                {
+                    opcode: 'getVar',
+                    text: 'var [NAME] of [TARGET]',
+                    blockType: BlockType.REPORTER,
+                    arguments: {
+                        TARGET: Target.Argument,
+                        NAME: {
+                            type: ArgumentType.STRING
+                        }
+                    }
+                },
+                {
+                    opcode: 'setVar',
+                    text: 'set var [NAME] of [TARGET] to [VALUE]',
+                    blockType: BlockType.COMMAND,
+                    arguments: {
+                        TARGET: Target.Argument,
+                        NAME: {
+                            type: ArgumentType.STRING
+                        },
+                        VALUE: {
+                            type: ArgumentType.STRING,
+                            exemptFromNormalization: true
+                        }
+                    }
+                },
                 '---',
                 {
                     opcode: 'all',
                     text: 'all targets',
+                    ...jwArray.Block
+                },
+                {
+                    opcode: 'touching',
+                    text: 'targets touching [TARGET]',
+                    arguments: {
+                        TARGET: Target.Argument
+                    },
+                    filter: [TargetType.SPRITE],
                     ...jwArray.Block
                 },
                 {
@@ -191,9 +242,9 @@ class Extension {
         };
     }
 
-    getSpriteMenu() {
-        let sprites = ["this"]
-        for (let target of vm.runtime.targets) {
+    getSpriteMenu({}) {
+        let sprites = ["this", "stage"]
+        for (let target of vm.runtime.targets.filter(v => v !== vm.runtime._stageTarget)) {
             if (!sprites.includes(target.sprite.name)) sprites.push(target.sprite.name)
         }
         return sprites
@@ -210,8 +261,16 @@ class Extension {
     fromName({SPRITE}, util) {
         SPRITE = Cast.toString(SPRITE)
         if (SPRITE == "this") return this.this({}, util)
+        if (SPRITE == "stage") return this.stage()
         let target = vm.runtime.getSpriteTargetByName(SPRITE)
         return new Target.Type(target ? target.id : "")
+    }
+
+    cloneOrigin({TARGET}, util) {
+        TARGET = Target.Type.toTarget(TARGET)
+        if (!TARGET.target) return ""
+
+        return this.fromName({SPRITE: TARGET.target.sprite.name}, util)
     }
 
     get({TARGET, MENU}) {
@@ -231,8 +290,44 @@ class Extension {
         return ""
     }
 
+    isClone({TARGET}) {
+        TARGET = Target.Type.toTarget(TARGET)
+        if (!TARGET.target) return false
+
+        return !TARGET.target.isOriginal
+    }
+
+    getVar({TARGET, NAME}) {
+        TARGET = Target.Type.toTarget(TARGET)
+        NAME = Cast.toString(NAME)
+        if (!TARGET.target) return ""
+
+        let variable = Object.values(TARGET.target.variables).find(v => v.name == NAME)
+        if (!variable) return ""
+
+        return variable.value
+    }
+
+    setVar({TARGET, NAME, VALUE}) {
+        TARGET = Target.Type.toTarget(TARGET)
+        NAME = Cast.toString(NAME)
+        if (!TARGET.target) return
+
+        let variable = Object.values(TARGET.target.variables).find(v => v.name == NAME)
+        if (!variable) return
+
+        variable.value = VALUE
+    }
+
     all() {
         return new jwArray.Type(vm.runtime.targets.map(v => new Target.Type(v.id)))
+    }
+
+    touching({TARGET}) {
+        let targets = vm.runtime.targets
+        targets.filter(v => v !== TARGET && !v.isStage)
+        targets.filter(v => TARGET.isTouchingTarget(v))
+        return new jwArray.Type(targets.map(v => new Target.Type(v.id)))
     }
 
     clones({TARGET}) {
